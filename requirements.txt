@@ -1,28 +1,11 @@
-# ─────────────────────────────────────────────
-# Real-Time World Cup Sentiment Tracker
-# requirements.txt
-# ─────────────────────────────────────────────
-
-# ── Dashboard ──────────────────────────────────
+# World Cup Sentiment Tracker v3
 dash==2.17.1
 plotly==5.22.0
-
-# ── NLP / ML ──────────────────────────────────
 transformers==4.41.2
-torch==2.3.1               # CPU-only; swap for torch[cuda] on GPU machines
-sentencepiece==0.2.0       # Required by some tokenisers
-
-# ── Data wrangling ────────────────────────────
+torch==2.3.1
+sentencepiece==0.2.0
 pandas==2.2.2
 numpy==1.26.4
-
-# ── Utilities ─────────────────────────────────
-gunicorn==22.0.0           # Production WSGI server (optional for local dev)
-
-# ─────────────────────────────────────────────
-# Install with:
-#   pip install -r requirements.txt
-#
-# For a lighter CPU-only torch (smaller download):
-#   pip install torch --index-url https://download.pytorch.org/whl/cpu
-# ─────────────────────────────────────────────
+requests==2.32.3
+python-dotenv==1.0.1
+gunicorn==22.0.0
