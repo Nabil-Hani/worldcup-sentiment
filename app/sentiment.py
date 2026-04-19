@@ -31,6 +31,9 @@ LABEL_MAP: dict[str, str] = {
     "LABEL_0": "Negative",
     "LABEL_1": "Neutral",
     "LABEL_2": "Positive",
+    "negative": "Negative",
+    "neutral":  "Neutral",
+    "positive": "Positive",
 }
 
 # Numeric score for charting (-1 = Negative, 0 = Neutral, +1 = Positive)
@@ -81,7 +84,7 @@ def analyze(text: str) -> SentimentResult:
     raw: list[dict] = nlp(text)      # Returns e.g. [{"label": "LABEL_2", "score": 0.97}]
     top = raw[0]
 
-    label     = LABEL_MAP.get(top["label"], top["label"])
+    label = LABEL_MAP.get(top["label"], top["label"]).capitalize()
     confidence = round(float(top["score"]), 4)
     score      = SCORE_MAP.get(label, 0.0)
 
