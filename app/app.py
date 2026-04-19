@@ -24,9 +24,6 @@ import dash
 from dash import dcc, html, Input, Output, callback
 import plotly.graph_objects as go
 import pandas as pd
-import os
-print("Working directory:", os.getcwd())
-print("CSV exists:", os.path.exists(os.path.join("data", "raw", "tweets.csv")))
 
 # Internal modules
 from simulator import tweet_stream
@@ -199,6 +196,22 @@ def _kpi_card(label: str, value: str, color: str) -> html.Div:
 # Callbacks — all driven by dcc.Interval
 # ---------------------------------------------------------------------------
 
+def _empty_fig(msg="Waiting for data…"):
+    fig = go.Figure()
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font_color=COLORS["text"],
+        xaxis={"visible": False}, yaxis={"visible": False},
+        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        annotations=[{
+            "text": msg, "showarrow": False,
+            "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
+            "font": {"color": COLORS["muted"], "size": 14},
+        }],
+    )
+    return fig
+
+
 @callback(
     Output("kpi-row",          "children"),
     Output("sentiment-timeline","figure"),
@@ -207,22 +220,18 @@ def _kpi_card(label: str, value: str, color: str) -> html.Div:
     Input("interval",          "n_intervals"),
 )
 def update_dashboard(n: int):
-    """
-    Called every `interval` ms.  Reads the current snapshot from the shared
-    store and rebuilds every visual component.
-    """
-    records = store.get_all()
+    try:
+        records = store.get_all()
+    except Exception as e:
+        logger.error("store.get_all() failed: %s", e)
+        records = []
 
-    # ── Empty state ─────────────────────────────────────────────────────────
     if not records:
-        empty_fig = go.Figure()
-        empty_fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color=COLORS["text"],
-            annotations=[{"text": "Waiting for data…", "showarrow": False,
-                          "font": {"color": COLORS["muted"], "size": 14}}],
+        waiting = html.P(
+            "Model loading, tweets arriving soon…",
+            style={"color": COLORS["muted"], "fontSize": "0.85rem"},
         )
-        return [], empty_fig, empty_fig, html.P("No tweets yet.", style={"color": COLORS["muted"]})
+        return [], _empty_fig("Model loading…"), _empty_fig(), waiting
 
     # ── Build DataFrame ──────────────────────────────────────────────────────
     df = pd.DataFrame([
