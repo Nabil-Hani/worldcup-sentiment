@@ -24,6 +24,9 @@ import dash
 from dash import dcc, html, Input, Output, callback
 import plotly.graph_objects as go
 import pandas as pd
+import os
+print("Working directory:", os.getcwd())
+print("CSV exists:", os.path.exists(os.path.join("data", "raw", "tweets.csv")))
 
 # Internal modules
 from simulator import tweet_stream
