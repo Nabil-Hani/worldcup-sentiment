@@ -1,59 +1,52 @@
-# ⚽ World Cup Sentiment Tracker v3
-
-A full multi-page web application tracking fan sentiment across every match of the 2022 World Cup, plus a live preview tracker for World Cup 2026.
-
-## Pages
-
-| Page | Description |
-|---|---|
-| **Home** | Landing page with feature overview |
-| **Past Matches** | All 64 Qatar 2022 matches — click any to replay sentiment |
-| **Future Matches** | Live countdown + simulated sentiment for WC 2026 |
-
-## Features
-- 🌍 3 languages: English, French, Spanish
-- 🌙 Dark / Light mode
-- ⚽ All 64 WC 2022 matches with real results
-- 🤖 RoBERTa NLP sentiment pipeline
-- 📊 Timeline, donut, team comparison charts
-- 🔄 Auto tweet source: tweets1.csv (past), tweets.csv (future)
-
-## Setup
-
-```bash
-# 1 — Install
-pip install -r requirements.txt
-
-# 2 — Add data files to data/raw/
-#   tweets.csv   → generated mock tweets (for future matches)
-#   tweets1.csv  → real Kaggle WC 2022 tweets (for past matches)
-#   Download from: https://www.kaggle.com/datasets/tirendazacademy/fifa-world-cup-2022-tweets
-
-# 3 — Optional: add football-data.org key for live fixtures
-echo "FOOTBALL_API_KEY=your_key" > .env
-
-# 4 — Run
-py app/app.py
-```
-
-Open http://localhost:8050
+# World Cup Sentiment Tracker — Production Build
 
 ## Directory structure
 
 ```
-wc-tracker/
+wc-saas/
 ├── app/
-│   ├── app.py          ← Entry point
-│   ├── wc2022_data.py  ← All 64 WC 2022 matches
-│   ├── i18n.py         ← EN / FR / ES translations
-│   ├── fixtures.py     ← WC 2026 upcoming fixtures
-│   ├── simulator.py    ← Tweet stream generator
-│   ├── sentiment.py    ← RoBERTa wrapper
-│   ├── state.py        ← Thread-safe data store
+│   ├── app.py                  ← Entry point
+│   ├── wc2022_data.py          ← All 64 WC 2022 matches
+│   ├── i18n.py                 ← EN / FR / ES translations
+│   ├── config/
+│   │   └── settings.py         ← All config in one place
+│   ├── services/
+│   │   ├── sim_engine.py       ← Persistent simulation (never resets on UI change)
+│   │   ├── match_data.py       ← Odds, lineups, news generation
+│   │   ├── simulator.py        ← Tweet stream generator
+│   │   ├── sentiment.py        ← RoBERTa wrapper
+│   │   ├── state.py            ← Thread-safe store
+│   │   └── fixtures.py         ← WC 2026 fixtures API
+│   ├── components/
+│   │   ├── charts.py           ← Plotly figure builders
+│   │   └── ui.py               ← Reusable HTML components
 │   └── assets/
-│       └── style.css   ← Full premium stylesheet
+│       └── style.css           ← Production stylesheet
 ├── data/raw/
-│   ├── tweets.csv      ← Mock data (future matches)
-│   └── tweets1.csv     ← Real Kaggle tweets (past matches)
+│   ├── tweets.csv              ← Mock tweets (future matches)
+│   └── tweets1.csv             ← Real Kaggle tweets (past matches)
+├── .env                        ← FOOTBALL_API_KEY=your_key
 └── requirements.txt
 ```
+
+## Key architectural decisions
+
+| Problem | Solution |
+|---|---|
+| Theme toggle resets simulation | `dcc.Store` for UI state only; `sim_engine` runs independently |
+| Language switch resets simulation | Same — UI store and engine are completely decoupled |
+| Match switch must reset simulation | `select_match` callback is the ONLY place `sim_engine.start()` is called |
+| Memory leak on long runs | `deque(maxlen=300)` bounds store size |
+| Race condition on thread restart | `threading.Event` stop signal + lock in `sim_engine` |
+
+## Run
+
+```bash
+pip install -r requirements.txt
+py app/app.py
+# Open http://localhost:8050
+```
+
+## Deploy (Render / Railway)
+
+Start command: `gunicorn app.app:server --workers=1 --threads=4 --bind=0.0.0.0:$PORT`
